@@ -40,14 +40,18 @@ class LoginController extends Controller
     	if ($openid) {
     		$checkOpenid=DB::table('user')->where('openid',$openid)->first();	
     		if ($checkOpenid) {
-    			$userId=$checkOpenid->id;
+    			$data['user_id']=$checkOpenid->id;
     		}else{
                 $userData=$request->all();
 		    	$userData['power']=0;
 		    	$userData['group_id']=0;
-  		 		$userId=DB::table('user')->insertGetId($userData);
+  		 		$data['user_id']=DB::table('user')->insertGetId($userData);
             }
-    			return $userId;
+            if ($data['user_id']) {
+                $data['power']=DB::table('user')->where('id',$data['user_id'])->value('power');
+                 
+            }
+    			return $data;
 		}
 	}
 }

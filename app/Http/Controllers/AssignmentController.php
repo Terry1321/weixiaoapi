@@ -24,18 +24,61 @@ class AssignmentController extends Controller
 	}
 	// 作业展示
 	public function show(Request $request){
-		// $userId =$request->input('user_id');
-		$assignments =DB::table('assignments')
-			->select('assignments.*','user.name as username','user.group_id','assignments_type.name as typename','group.name as groupname')
-			 ->join('user','user.id','assignments.user_id')
-			 ->join('assignments_type','assignments_type.id','assignments_type_id')
-			 ->join('group','group.id','assignments.group_id')
-			 ->get();
-			
+		// 获取用户id
+		$userId =$request->input('user_id');
+		// 获取用户权限
+		$power=$request->input('power');
+		
+		switch ($power) {
+			// power是0是 家长只可以获取自己加的群
+			case '0':
+			// 获取用户所在群
+				$userGroupId=DB::table('user')->where('id',$userId)->value('group_id');
+				$groupId=trim($userGroupId,',');
+				if (is_numeric($groupId)) {
+					// $where="'assignments.group_id','like','%$groupId%'";
+					// 获取数据
+					$assignments =DB::table('assignments')
+					->select('assignments.*','user.name as username','user.group_id','assignments_type.name as typename','group.name as groupname')
+					 ->join('user','user.id','assignments.user_id')
+					 ->join('assignments_type','assignments_type.id','assignments_type_id')
+					 ->join('group','group.id','assignments.group_id')
+					 ->where('assignments.group_id','like','%'.$groupId.'%')
+					 ->get();
+				}
+			break;
+			//power为1时 老师可以获取自己发的信息
+			case '1':
+			// $where="'assignments.user_id',$userId";
+			// 获取数据
+				$assignments =DB::table('assignments')
+				->select('assignments.*','user.name as username','user.group_id','assignments_type.name as typename','group.name as groupname')
+				 ->join('user','user.id','assignments.user_id')
+				 ->join('assignments_type','assignments_type.id','assignments_type_id')
+				 ->join('group','group.id','assignments.group_id')
+				 ->where('assignments.user_id',$userId)
+				 ->get();
+			break;
+		}
+		// 获取数据
+			// $assignments =DB::table('assignments')
+			// 	->select('assignments.*','user.name as username','user.group_id','assignments_type.name as typename','group.name as groupname')
+			// 	 ->join('user','user.id','assignments.user_id')
+			// 	 ->join('assignments_type','assignments_type.id','assignments_type_id')
+			// 	 ->join('group','group.id','assignments.group_id')
+			// 	 ->where($where)
+			// 	 ->get();
+	
+			// 遍历数据（日期）
+		if ($assignments) {
 			foreach ($assignments as $value) {
 				$value->time=date('m-d H:i',$value->time);
 			}
 			return $assignments;
+		}else{
+			return 0;
+		}
+		
 	}
 	/*
 		$request接收需要上传的图片
