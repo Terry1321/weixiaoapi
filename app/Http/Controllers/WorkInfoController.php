@@ -44,5 +44,5 @@ class WorkInfoController extends Controller
 		return $group;
 	}
 }
-
+ 
 ?>

@@ -16,19 +16,42 @@ class AssignmentController extends Controller
 			->where('assignments.id',$id)
 			->get();
 
-		foreach ($workDetail as $key => $value) {
-			$value->time=date('m-d H:i',$value->time);
-			$value->img=DB::table('image')->select('name')->where('assignments_id',$id)->get();
+		if ($workDetail) {
+			foreach ($workDetail as $key => $value) {
+				$value->time=date('m-d H:i',$value->time);
+			}
+			return $workDetail;
+		}else{
+			return 0;
 		}
-		return $workDetail;
+	}
+	// 作业图片获取
+	public function picture(Request $request){
+		$assignmentsId=$request->input('assignments_id');
+		$picture=DB::table('image')->where('assignments_id',$assignmentsId)->pluck('name');
+		return $picture;
+	}
+	// 查询作业展示的数据
+	private function getAssignmentsData($condition,$symbol,$screen){
+		// 获取数据
+		$assignmentsData =DB::table('assignments')
+		->select('assignments.*','user.name as username','user.group_id','assignments_type.name as typename','group.name as groupname')
+		 ->join('user','user.id','assignments.user_id')
+		 ->join('assignments_type','assignments_type.id','assignments_type_id')
+		 ->join('group','group.id','assignments.group_id')
+		 ->where($condition,$symbol,$screen)
+		 ->get();
+
+		 return $assignmentsData;
 	}
 	// 作业展示
 	public function show(Request $request){
 		// 获取用户id
 		$userId =$request->input('user_id');
+        // $userId=45;
 		// 获取用户权限
-		$power=$request->input('power');
-		
+		$power=$request->input('power');		
+        // $power=1;
 		switch ($power) {
 			// power是0是 家长只可以获取自己加的群
 			case '0':
@@ -36,41 +59,31 @@ class AssignmentController extends Controller
 				$userGroupId=DB::table('user')->where('id',$userId)->value('group_id');
 				$groupId=trim($userGroupId,',');
 				if (is_numeric($groupId)) {
-					// $where="'assignments.group_id','like','%$groupId%'";
 					// 获取数据
-					$assignments =DB::table('assignments')
-					->select('assignments.*','user.name as username','user.group_id','assignments_type.name as typename','group.name as groupname')
-					 ->join('user','user.id','assignments.user_id')
-					 ->join('assignments_type','assignments_type.id','assignments_type_id')
-					 ->join('group','group.id','assignments.group_id')
-					 ->where('assignments.group_id','like','%'.$groupId.'%')
-					 ->get();
+					$screen='%'.$groupId.'%';
+					$assignments=$this->getAssignmentsData('assignments.group_id','like',$screen);
 				}
 			break;
 			//power为1时 老师可以获取自己发的信息
 			case '1':
-			// $where="'assignments.user_id',$userId";
 			// 获取数据
-				$assignments =DB::table('assignments')
-				->select('assignments.*','user.name as username','user.group_id','assignments_type.name as typename','group.name as groupname')
-				 ->join('user','user.id','assignments.user_id')
-				 ->join('assignments_type','assignments_type.id','assignments_type_id')
-				 ->join('group','group.id','assignments.group_id')
-				 ->where('assignments.user_id',$userId)
-				 ->get();
+				$assignments=$this->getAssignmentsData('assignments.user_id','=',$userId);
+				foreach ($assignments as $key => $value) {
+                    // 把群id最后的，取消
+                    $groupId=trim($value->group_id,',');
+                    // 用逗号分隔id
+                    $id[]=explode(',', $groupId);
+                    // 查询班级名称
+                    foreach ($id as $key => $value1) {
+                        foreach ($value1 as $key => $value2) {
+                           $value->groupName[]=DB::table('group')->where('id',$value2)->value("name");
+                        }
+                    }
+                }
 			break;
 		}
-		// 获取数据
-			// $assignments =DB::table('assignments')
-			// 	->select('assignments.*','user.name as username','user.group_id','assignments_type.name as typename','group.name as groupname')
-			// 	 ->join('user','user.id','assignments.user_id')
-			// 	 ->join('assignments_type','assignments_type.id','assignments_type_id')
-			// 	 ->join('group','group.id','assignments.group_id')
-			// 	 ->where($where)
-			// 	 ->get();
-	
-			// 遍历数据（日期）
-		if ($assignments) {
+		// 遍历数据（日期）
+		if ($assignments){
 			foreach ($assignments as $value) {
 				$value->time=date('m-d H:i',$value->time);
 			}
@@ -99,7 +112,8 @@ class AssignmentController extends Controller
 			$ext=$imageFile->getClientOriginalExtension();
 			// 重命名图片
 			$newName=time().'_'.rand().'.'.$ext;
-			if ($imageFile->move($path,$newName)) {
+			$data=$imageFile->move($path,$newName);
+			if ($data) {
 				$imagesData = array(
 					'assignments_id' =>$request->input('assignments_id'),
 					'name'=>$newName 
@@ -119,13 +133,33 @@ class AssignmentController extends Controller
 		作业提交
 	*/
     public function workStore(Request $request){
-    	if ($request->all()) {
-	    	$assignment=$request->except('openid');
+    	if ($assignment=$request->all()) {
 	    	$assignment['time']=time();
-	    	$assignment['read']=0;
 	    	if ($workinfoId=DB::table('assignments')->insertGetId($assignment)) {
-	    		return $workinfoId;	
+	    		// 整理数据
+	    		$noticesType=DB::table('notices_type')->where('name','作业')->value('id');
+	    		$userId=$request->input('user_id');
+	    		$groupId=$request->input('group_id');
+	    		// 整理数组
+	    		$notices= array(
+	    			'text' =>'您有一条新作业',
+	    			'user_id'=> $userId,
+	    			'group_id'=>$groupId,
+	    			'time'=>time(),
+	    			'notices_type_id'=>$noticesType,
+	    		);
+	    		// 插入数据
+	    		if (DB::table('notices')->insert($notices)) {
+	    			// 成功返回workinfoid
+	    			return $workinfoId;	
+	    		}else{
+	    			// 失败删除已插入的数据
+	    			DB::table('assignments')->where('id',$workinfoId)->delete();
+	    			// 返回错误代码
+	    			return 0;
+	    		}
 	    	}else{
+	    		// 返回错误代码
 	    		return 0;
 	    	}
 		}

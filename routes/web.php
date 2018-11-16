@@ -11,7 +11,7 @@
 |
 */
 //添加作业信息
-Route::post('/assignment','AssignmentController@workStore');
+Route::post('/workstore','AssignmentController@workStore');
 // 图片上传
 Route::post('/upload','AssignmentController@upload');
 // 获取用户openid
@@ -29,10 +29,16 @@ Route::post('/notice','NoticeController@notice');
 //留言板展示
 Route::post('/message/show','MessageController@show');
 //作业展示
-Route::post('/assignment/show','AssignmentController@show');
+Route::get('/assignment/show','AssignmentController@show');
+// 通知展示
+Route::post('/notice/show','NoticeController@show');
 //作业详情
 Route::post('/workdetail','AssignmentController@workDetail');
 //用户名修改
 Route::post('/namechange','NameChangeController@nameChange');
 //我的信息
 Route::post('/myinfo','MyInfoController@myInfo');
+//群成员列表
+Route::post('/classparentslist','MyInfoController@classParentsList');
+// 获取作业详情图片
+Route::post('/picture','AssignmentController@picture');

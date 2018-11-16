@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use DB;
-
 /**
  * 
  */
@@ -25,6 +24,21 @@ class MyInfoController extends Controller{
 			$value->group[]=$group;
 		}
 			return $data;
+	}
+
+	// 群家长列表
+	public function classParentsList(Request $request){
+		$userId=$request->input('user_id');
+		$userGroupId=DB::table('user')->where('id',$userId)->value('group_id');
+		$groupId=explode(',',$userGroupId);
+		$pop=array_pop($groupId);
+		foreach ($groupId as $key => $value) {
+			$data[$value] =DB::table('user')->select('name','id')->where('group_id','like','%'.$value.'%')->get();
+			foreach ($data[$value] as $key1 => $value1) {
+				$chatParentList[$value][$value1->name] = $value1->id;
+			}
+		}
+		return $chatParentList;
 	}
 }
  ?>

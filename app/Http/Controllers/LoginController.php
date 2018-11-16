@@ -44,14 +44,17 @@ class LoginController extends Controller
     		}else{
                 $userData=$request->all();
 		    	$userData['power']=0;
-		    	$userData['group_id']=0;
   		 		$data['user_id']=DB::table('user')->insertGetId($userData);
             }
+
             if ($data['user_id']) {
-                $data['power']=DB::table('user')->where('id',$data['user_id'])->value('power');
-                 
+                $info=DB::table('user')->where('id',$data['user_id'])->get();
+                foreach ($info as $key => $value) {
+                    $data['power']=$value->power;
+                    $data['name']=$value->name;
+                }
             }
-    			return $data;
+                return $data;
 		}
 	}
 }
