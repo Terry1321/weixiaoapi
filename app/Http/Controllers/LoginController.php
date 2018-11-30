@@ -43,14 +43,14 @@ class LoginController extends Controller
     			$data['user_id']=$checkOpenid->id;
     		}else{
                 $userData=$request->all();
-		    	$userData['power']=0;
+		    	$userData['isTeacher']='false';
   		 		$data['user_id']=DB::table('user')->insertGetId($userData);
             }
 
             if ($data['user_id']) {
                 $info=DB::table('user')->where('id',$data['user_id'])->get();
                 foreach ($info as $key => $value) {
-                    $data['power']=$value->power;
+                    $data['isTeacher']=$value->isTeacher;
                     $data['name']=$value->name;
                 }
             }

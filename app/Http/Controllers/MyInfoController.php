@@ -27,7 +27,7 @@ class MyInfoController extends Controller{
 	}
 
 	// 群家长列表
-	public function classParentsList(Request $request){
+	public function chatParentList(Request $request){
 		$userId=$request->input('user_id');
 		$userGroupId=DB::table('user')->where('id',$userId)->value('group_id');
 		$groupId=explode(',',$userGroupId);
@@ -38,6 +38,7 @@ class MyInfoController extends Controller{
 				$chatParentList[$value][$value1->name] = $value1->id;
 			}
 		}
+
 		return $chatParentList;
 	}
 }

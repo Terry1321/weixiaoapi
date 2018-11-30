@@ -12,15 +12,29 @@ class MessageController extends Controller
         
         foreach ($show as $value) {
             $value->time=date('Y-m-d H:i',$value->time);
-            unset($value->user_id);
+            $value->comment=DB::table('comment')->select("user.name","comment.content")
+            ->join('user','comment.user_id','user.id')
+            ->where('message_id',$value->messageId)->get();
+            $value->teacherName=$value->name;
+            unset($value->name,$value->user_id);
         }
          return $show;
     }
     // 留言板发布
     public function message(Request $request){
        $text = $request->all();
+       $text['user_id']=$request->input('user_id');
        $text['time']=time();
        if (DB::table('message')->insert($text)) {
+            return 1;
+       }else{
+            return 0;
+       }
+    }
+    // 发布评论
+    public function comment(Request $request){
+        $comment = $request->all();
+       if (DB::table('comment')->insert($comment)) {
             return 1;
        }else{
             return 0;
