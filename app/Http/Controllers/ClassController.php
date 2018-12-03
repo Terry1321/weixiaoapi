@@ -19,6 +19,9 @@ class ClassController extends Controller
 				$terms=explode(',', $groupId);
 				$pop=array_pop($terms);
 				foreach ($terms as $term) {
+					if (!DB::table('group')->where('id',$term)->first()) {
+						continue;	
+					}
 					$group[]=DB::table('group')->select('id as classId','name as className')->where('id',$term)->first();
 				}	
 				break;
@@ -187,6 +190,53 @@ class ClassController extends Controller
 			return 1;
 		}else{
 			return 0;
+		}
+	}
+
+	/*
+		退群或解散
+	*/
+	public function quit(Request $request){
+		// 获取解散还是退出
+		$statu=$request->input('statu');
+		/*
+	
+			判断
+			1：解散
+			0：退出
+		*/
+		switch ($statu) {
+
+				case '1':
+				// 获取群ID
+				$groupId=$request->input('group_id');
+				if (DB::table('group')->where('id',$groupId)->delete()) {
+					return 1;
+				}else{
+					return 0;
+				}
+			break;
+
+			case '0':
+				// 获取需要退群的ID
+				$groupId=$request->expect('user_id');
+				// 获取用户ID
+				$userId=$request->input('user_id');
+				// 获取用户的所有id
+				$group=DB::table('user')->where('id',$userId)->value('group_id');
+				// 分隔成数据
+				$exploded=explode(',', $group);
+				// 把需要退群的群ID移除
+				$diff=array_diff($exploded, $groupId);
+				// 合并数组
+				$newGroupId=join(',',$diff);
+				// 把合并后的数据加入数据库
+				if (DB::table('user')->where('id',$userId)->update(['group_id'=>$newGroupId.','])) {
+					return 1;
+				}else{
+					return 0;
+				}
+			break;
 		}
 	}
 }

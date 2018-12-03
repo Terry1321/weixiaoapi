@@ -47,6 +47,7 @@ class AssignmentController extends Controller
 		$star=DB::table('assignments')->where('id',$id)->value('star');
 		return $star;
 	}
+
 	/*学生列表*/
 	public function studentList(Request $request){
 		// 获取作业详情ID
@@ -60,13 +61,14 @@ class AssignmentController extends Controller
 			// 判断是否已提交
 			$submited=DB::table('submited')->where([['user_id',$value->id],['assignments_id',$workId]])->first();
 			if ($submited) {
-				$value->submited=ture;
+				$value->submited=TRUE;
 			}else{
-				$value->submited=false;
+				$value->submited=FALSE;
 			}
 			
 		}
-			return $list;
+		$list->count=count($list);
+		return $list;
 	}
 
 	/*
@@ -102,6 +104,7 @@ class AssignmentController extends Controller
 				// 添加进数据库
 					$insert=DB::table('image')->insert($imagesData);
 				}
+				
 				if ($insert) {
 					return 1;
 				}else{
@@ -138,7 +141,16 @@ class AssignmentController extends Controller
 		作业评价
     */
 		public function submited(Request $request){
-			$star =$request->all();
+			$submited =$request->all();
+			$workId=$request->input('assignments_id');
+			if (DB::table('submited')->insert($submited)) {
+				$peopleCount=DB::table('submited')->where('assignments_id',$workId)->count();
+				$starCount=DB::table('submited')->where('assignments_id',$workId)->sum('star');
+				$star = round($starCount/$peopleCount);	
+				if (DB::table('assignments')->where('id',$workId)->update(['star'=>$star])) {
+					return 1;
+				}
+			}
 		}
 } 
 ?>

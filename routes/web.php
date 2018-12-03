@@ -60,5 +60,10 @@ Route::post('/comment','MessageController@comment');
 Route::post('/join','ClassController@join');
 // 作业评价
 Route::post('/submited','AssignmentController@submited');
-
+// 通知详情
+Route::post('/notice/detail','NoticeController@noticesDetail');
+// 退群//解散
+Route::post('quit','ClassController@quit');
+// // 解散群
+// Route::post('disband','ClassController@disband');
 
